@@ -4,40 +4,36 @@ declare(strict_types=1);
 
 namespace Symfony\Component\DependencyInjection\Loader\Configurator;
 
+use Xutim\MediaBundle\Console\CleanOrphanedVariantsCommand;
+use Xutim\MediaBundle\Console\RegenerateVariantsCommand;
 use Xutim\MediaBundle\Infra\Storage\StorageAdapterInterface;
-use Xutim\MediaBundle\MessageHandler\RegenerateVariantsHandler;
 use Xutim\MediaBundle\Repository\MediaRepositoryInterface;
-use Xutim\MediaBundle\Repository\MediaTranslationRepositoryInterface;
 use Xutim\MediaBundle\Repository\MediaVariantRepositoryInterface;
-use Xutim\MediaBundle\Service\BlurHashGenerator;
-use Xutim\MediaBundle\Service\MediaUploader;
+use Xutim\MediaBundle\Service\PresetRegistry;
 use Xutim\MediaBundle\Service\VariantCleaner;
 use Xutim\MediaBundle\Service\VariantGenerator;
 
 return static function (ContainerConfigurator $container): void {
     $services = $container->services();
 
-    $services->set(RegenerateVariantsHandler::class)
+    $services->set(RegenerateVariantsCommand::class)
         ->args([
             service(MediaRepositoryInterface::class),
             service(MediaVariantRepositoryInterface::class),
             service(VariantGenerator::class),
             service(VariantCleaner::class),
+            service(PresetRegistry::class),
             service('doctrine.orm.entity_manager'),
             '%xutim_media.model.media_variant.class%',
         ])
-        ->tag('messenger.message_handler');
+        ->tag('console.command');
 
-    $services->set(MediaUploader::class)
+    $services->set(CleanOrphanedVariantsCommand::class)
         ->args([
-            service(StorageAdapterInterface::class),
-            service(MediaRepositoryInterface::class),
-            service(MediaTranslationRepositoryInterface::class),
             service(MediaVariantRepositoryInterface::class),
-            service(VariantGenerator::class),
-            service(BlurHashGenerator::class),
-            '%xutim_media.model.media.class%',
-            '%xutim_media.model.media_translation.class%',
-            '%xutim_media.model.media_variant.class%',
-        ]);
+            service(StorageAdapterInterface::class),
+            '%xutim_media.storage.public_dir%',
+            '%xutim_media.storage.media_path%',
+        ])
+        ->tag('console.command');
 };
