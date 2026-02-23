@@ -24,6 +24,7 @@ use Xutim\MediaBundle\Action\Admin\MoveMediaAction;
 use Xutim\MediaBundle\Action\Admin\MoveMediaToFolderAction;
 use Xutim\MediaBundle\Action\Admin\PresetPreviewAction;
 use Xutim\MediaBundle\Action\Admin\RegenerateVariantsAction;
+use Xutim\MediaBundle\Action\Admin\ReplaceMediaAction;
 use Xutim\MediaBundle\Action\Admin\ShowMediaTranslationAction;
 use Xutim\MediaBundle\Action\Admin\UpdateFocalPointAction;
 use Xutim\MediaBundle\Action\Admin\UploadMediaAction;
@@ -35,7 +36,6 @@ use Xutim\MediaBundle\Repository\MediaVariantRepositoryInterface;
 use Xutim\MediaBundle\Service\MediaUploader;
 use Xutim\MediaBundle\Service\PresetRegistry;
 use Xutim\MediaBundle\Service\VariantCleaner;
-use Xutim\MediaBundle\Service\VariantGenerator;
 use Xutim\MediaBundle\Service\VariantPathResolver;
 use Xutim\SecurityBundle\Service\TranslatorAuthChecker;
 use Xutim\SecurityBundle\Service\UserStorage;
@@ -59,16 +59,8 @@ return static function (ContainerConfigurator $container): void {
     $services->set(RegenerateVariantsAction::class)
         ->args([
             service(MediaRepositoryInterface::class),
-            service(MediaVariantRepositoryInterface::class),
-            service(VariantGenerator::class),
-            service(VariantCleaner::class),
-            service('doctrine.orm.entity_manager'),
-            service(LogEventFactory::class),
-            service(LogEventRepository::class),
-            service(UserStorage::class),
             service('security.authorization_checker'),
-            '%xutim_media.model.media_variant.class%',
-            '%xutim_media.model.media.class%',
+            service('messenger.default_bus'),
         ])
         ->tag('controller.service_arguments');
 
@@ -209,6 +201,21 @@ return static function (ContainerConfigurator $container): void {
             service(MediaRepositoryInterface::class),
             service(MediaFolderRepositoryInterface::class),
             service('twig'),
+        ])
+        ->tag('controller.service_arguments');
+
+    $services->set(ReplaceMediaAction::class)
+        ->args([
+            service(MediaRepositoryInterface::class),
+            service(MediaUploader::class),
+            service(LogEventFactory::class),
+            service(LogEventRepository::class),
+            service(UserStorage::class),
+            service('form.factory'),
+            service('twig'),
+            service(AdminUrlGenerator::class),
+            service('security.authorization_checker'),
+            '%xutim_media.model.media.class%',
         ])
         ->tag('controller.service_arguments');
 
